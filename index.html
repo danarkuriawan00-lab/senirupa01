@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Asesmen SDN 1 Gondang</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-blue: #0284c7;
+            --secondary-blue: #93c5fd;
+            --accent-green: #10b981;
+            --bg-gray: #f3f4f6;
+        }
+
+        body {
+            background-color: var(--bg-gray);
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: #f8fafc;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 640px) {
+            .app-container {
+                height: 90vh;
+                border-radius: 24px;
+            }
+        }
+
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 24px;
+            padding-bottom: 70px; /* Safe space for floating marquee footer */
+        }
+
+        .font-sahabat {
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 0.1em;
+            background: linear-gradient(135deg, #0284c7, #1e3a8a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(1px 1px 0px rgba(255,255,255,0.3));
+        }
+
+        .login-card {
+            background-color: var(--secondary-blue);
+            border-radius: 20px;
+            padding: 32px 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-masuk {
+            background-color: var(--accent-green);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-masuk:hover {
+            background-color: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-nav {
+            background-color: var(--primary-blue);
+            border-radius: 12px;
+            color: white;
+            padding: 12px 20px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .option-item {
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            background-color: white;
+        }
+
+        .option-item:hover {
+            background-color: #f1f5f9;
+            transform: translateY(-1px);
+        }
+
+        .selected-option {
+            background-color: #e0f2fe !important;
+            border-color: #0284c7 !important;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
+            transform: translateX(6px);
+        }
+
+        #loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(4px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            color: white;
+            border-radius: inherit;
+        }
+
+        .input-field {
+            background-color: #0369a1; /* Slightly darker than primary blue for high contrast text readability */
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            padding: 14px;
+            border-radius: 12px;
+            width: 100%;
+            border: 2px solid transparent;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: white;
+        }
+
+        .input-field::placeholder { color: rgba(255,255,255,0.7); }
+
+        .marquee-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #1e293b;
+            color: white;
+            padding: 8px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            z-index: 50;
+            border-top: 2px solid var(--accent-green);
+        }
+
+        .marquee-text {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 25s linear infinite;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+        }
+
+        /* Hide scrollbar utility */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app">
+    <!-- Active Action Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="animate-spin rounded-full h-14 w-14 border-4 border-sky-400 border-t-transparent mb-4"></div>
+        <p class="font-bold text-lg" id="loading-text">Mengirim Jawaban...</p>
+        <p class="text-xs text-sky-200 mt-2 px-6 text-center" id="loading-subtext">Jangan tutup aplikasi hingga proses selesai.</p>
+    </div>
+
+    <!-- Live Running Text Status -->
+    <div class="marquee-container" id="marquee-bar">
+        <div class="marquee-text">
+            Selamat Mengerjakan Ujian • Jujur adalah Kunci Kesuksesan • SDN 1 Gondang: Cerdas, Berkarakter, Berprestasi • Teliti Kembali Jawaban Anda Sebelum Dikirim • Semangat Sahabat! • Kelas 5 B Is The Best
+        </div>
+    </div>
+
+    <!-- Floating Custom Warning Alert -->
+    <div id="custom-alert" class="fixed inset-x-0 top-6 mx-auto max-w-[340px] bg-red-600 text-white px-5 py-3 rounded-full z-[300] shadow-2xl font-bold text-center text-xs hidden transform -translate-y-10 transition-all duration-300">
+        <span id="alert-text">Peringatan!</span>
+    </div>
+
+    <div class="main-content flex flex-col no-scrollbar">
+        <!-- Login Screen -->
+        <div id="login-screen" class="flex flex-col items-center">
+            <div class="mt-4 mb-4">
+                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiUAgnz3M-C0b4aP4NCccOVpRTBjimetBgZhyphenhyphenkGcMIcG3YY7RhacnjOZFFonylLQGbQ0LQHR7n4cOk7XN8mDb9YmRrXgJi5q7yZCEEKpQ4CYuB9WaZLCNw35_qVPvcRTizOMvZXsYVqmAOSfxDv9bUmpB9z_-2G3ecR_C1CONgsQ5-5U5NA2B9rpU4zfJnZ/w200-h200/sdn%20gng%201.png" alt="Logo SDN 1 Gondang" class="w-24 h-24 object-contain">
+            </div>
+
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800 leading-tight uppercase">Selamat Datang</h1>
+                <h2 class="text-5xl font-black mb-2 font-sahabat uppercase">Sahabat</h2>
+                <p class="text-[10px] text-gray-500 font-semibold tracking-wider uppercase text-center max-w-xs mx-auto">
+                    Sistem Asesmen Hasil Amanah Berprestasi Akurat & Terpercaya - SDN 1 Gondang
+                </p>
+            </div>
+
+            <div class="w-full login-card">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-left text-xs font-bold text-sky-950 mb-1 ml-1 uppercase">Nama Lengkap</label>
+                        <input type="text" id="name" placeholder="NAMA LENGKAP" class="input-field uppercase" autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="block text-left text-xs font-bold text-sky-950 mb-1 ml-1 uppercase">Nomor Absen</label>
+                        <input type="number" id="absen" min="1" max="50" placeholder="NOMOR ABSEN" class="input-field" autocomplete="off">
+                    </div>
+                    <button onclick="startExam()" class="w-full py-4 mt-2 rounded-xl btn-masuk text-white font-bold text-lg shadow-lg uppercase active:scale-95 transition-all">
+                        Mulai Ujian
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exam Screen -->
+        <div id="exam-screen" class="hidden flex flex-col h-full">
+            <!-- Navigation Map & Indicator Header -->
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase">
+                        Soal <span id="current-number">1</span> / <span id="total-questions">0</span>
+                    </span>
+                    <span id="timer" class="text-gray-700 font-mono font-bold text-xs bg-white px-3 py-1 rounded-lg shadow-sm border">00:00</span>
+                </div>
+                
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+
+                <!-- Navigation Map Buttons Grid -->
+                <div id="question-map" class="flex gap-1.5 overflow-x-auto py-1.5 no-scrollbar border-b border-gray-100 mb-2">
+                    <!-- Loaded dynamically in startExam -->
+                </div>
+            </div>
+            
+            <div class="flex-grow">
+                <div id="section-title" class="text-[10px] font-black text-blue-500 uppercase mb-2 tracking-widest"></div>
+                <div class="bg-white rounded-2xl p-5 shadow-sm mb-5 border-b-4 border-blue-200">
+                    <p id="question-text" class="text-base font-bold text-gray-800 leading-relaxed whitespace-pre-line">Memuat soal...</p>
+                </div>
+                <div id="options-container" class="space-y-2.5"></div>
+            </div>
+
+            <div class="flex justify-between items-center mt-6 pb-2 gap-4">
+                <button onclick="prevQuestion()" id="prev-btn" class="btn-nav flex-1 opacity-50" disabled> sebelumnya </button>
+                <button onclick="handleNext()" class="btn-nav flex-1" id="next-btn"> selanjutnya </button>
+            </div>
+        </div>
+
+        <!-- Review Screen (Pembahasan Pasca Selesai) -->
+        <div id="review-screen" class="hidden flex flex-col h-full">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
+                <h2 class="font-bold text-gray-800 text-base flex items-center gap-2">
+                    <span class="w-3 h-3 bg-green-500 rounded-full animate-ping"></span>
+                    Hasil & Pembahasan
+                </h2>
+                <button onclick="location.reload()" class="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded">Mulai Ulang</button>
+            </div>
+
+            <!-- Score Cards -->
+            <div class="grid grid-cols-3 gap-2.5 mb-5 text-center">
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <p class="text-[10px] text-blue-500 uppercase font-bold">Skor Kamu</p>
+                    <p class="text-2xl font-black text-blue-700" id="final-score">0</p>
+                </div>
+                <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                    <p class="text-[10px] text-emerald-500 uppercase font-bold">Jawaban Benar</p>
+                    <p class="text-2xl font-black text-emerald-700" id="final-correct">0</p>
+                </div>
+                <div class="bg-amber-50 p-3 rounded-xl border border-amber-100">
+                    <p class="text-[10px] text-amber-500 uppercase font-bold">Durasi Ujian</p>
+                    <p class="text-base font-bold text-amber-700 mt-1" id="final-duration">00:00</p>
+                </div>
+            </div>
+            
+            <div id="review-list" class="space-y-4 overflow-y-auto flex-grow no-scrollbar mb-4">
+                <!-- Dynamically populated review content cards -->
+            </div>
+            
+            <button onclick="location.reload()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm uppercase transition-all shadow-md">
+                Selesai & Keluar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Submission Dialog Modal -->
+<div id="confirm-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Selesai Ujian?</h3>
+        <p id="confirm-modal-msg" class="text-gray-500 mb-6 text-xs leading-relaxed">Pastikan semua jawaban sudah terisi dengan benar.</p>
+        <div class="flex gap-3">
+            <button onclick="hideConfirm()" class="flex-1 py-3 border-2 border-gray-200 rounded-xl font-bold text-xs text-gray-500 tracking-wider">Batal</button>
+            <button onclick="finishExam()" class="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold text-xs tracking-wider shadow-lg active:scale-95 transition-all">Kirim</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbz1sq6Ks2rC3lIdcA3i9TRLPebUdny0st73zmcZXI7HVVSZ63hxJWsz3_rVOH3L0gdO/exec'; 
+
+    const questions = [
+        // Bagian 1: Pengenalan Sampah & Sifatnya (Q1 - Q5)
+        { 
+            section: "Bagian 1: Pengenalan Sampah & Sifatnya", 
+            text: "Segala sesuatu yang sudah tidak terpakai dan dibuang oleh pemiliknya disebut dengan...", 
+            options: [
+                {id:'A', text:'Bahan baku'}, 
+                {id:'B', text:'Limbah atau sampah'}, 
+                {id:'C', text:'Kerajinan'}, 
+                {id:'D', text:'Komoditas'}
+            ], 
+            correct: 'B',
+            explanation: "Bahan sisa atau sisa kegiatan manusia yang sudah tidak bernilai guna asli dan harus dibuang biasa disebut dengan limbah atau sampah."
+        },
+        { 
+            section: "Bagian 1: Pengenalan Sampah & Sifatnya", 
+            text: "Berdasarkan sifatnya, sampah yang mudah membusuk dan berasal dari sisa makhluk hidup disebut...", 
+            options: [
+                {id:'A', text:'Sampah organik'}, 
+                {id:'B', text:'Sampah anorganik'}, 
+                {id:'C', text:'Sampah B3'}, 
+                {id:'D', text:'Sampah residu'}
+            ], 
+            correct: 'A',
+            explanation: "Sampah organik merupakan jenis sampah basah yang berasal dari tumbuhan atau hewan, yang memiliki sifat alami mudah membusuk dan terurai kembali ke dalam tanah."
+        },
+        { 
+            section: "Bagian 1: Pengenalan Sampah & Sifatnya", 
+            text: "Manakah di bawah ini yang merupakan contoh sampah organik?", 
+            options: [
+                {id:'A', text:'Botol plastik dan kaleng'}, 
+                {id:'B', text:'Pecahan kaca dan kabel'}, 
+                {id:'C', text:'Kulit buah dan sisa sayuran'}, 
+                {id:'D', text:'Baterai dan lampu neon'}
+            ], 
+            correct: 'C',
+            explanation: "Kulit buah serta sisa sayuran merupakan bahan pangan alami (sel hidup) yang organik, mudah membusuk dan dapat diproses kembali menjadi kompos."
+        },
+        { 
+            section: "Bagian 1: Pengenalan Sampah & Sifatnya", 
+            text: "Sampah yang sulit terurai secara alami oleh bakteri disebut sampah...", 
+            options: [
+                {id:'A', text:'Alami'}, 
+                {id:'B', text:'Organik'}, 
+                {id:'C', text:'Anorganik'}, 
+                {id:'D', text:'Residu'}
+            ], 
+            correct: 'C',
+            explanation: "Sampah anorganik terbuat dari bahan non-alami atau bahan kimia buatan manusia yang tidak bisa diurai secara alami oleh mikroorganisme dalam waktu yang singkat."
+        },
+        { 
+            section: "Bagian 1: Pengenalan Sampah & Sifatnya", 
+            text: "Contoh sampah anorganik yang sering digunakan untuk bahan karya seni adalah...", 
+            options: [
+                {id:'A', text:'Daun kering'}, 
+                {id:'B', text:'Ranting pohon'}, 
+                {id:'C', text:'Botol plastik bekas'}, 
+                {id:'D', text:'Cangkang telur'}
+            ], 
+            correct: 'C',
+            explanation: "Botol plastik bekas merupakan sampah anorganik yang kuat, elastis, beraneka warna, dan sangat populer dikreasikan menjadi ragam karya seni bernilai guna tinggi."
+        },
+        
+        // Bagian 2: Penggolongan Sampah Khusus (Q6 - Q11)
+        { 
+            section: "Bagian 2: Penggolongan Sampah Khusus", 
+            text: "Apa yang dimaksud dengan limbah B3?", 
+            options: [
+                {id:'A', text:'Limbah yang bisa dimakan'}, 
+                {id:'B', text:'Limbah yang mudah membusuk'}, 
+                {id:'C', text:'Bahan Berbahaya dan Beracun'}, 
+                {id:'D', text:'Barang Bekas Bangunan'}
+            ], 
+            correct: 'C',
+            explanation: "B3 merupakan kependekan dari Bahan Berbahaya dan Beracun. Limbah kategori ini memiliki senyawa kimia aktif berbahaya yang memerlukan perlakuan penanganan khusus."
+        },
+        { 
+            section: "Bagian 2: Penggolongan Sampah Khusus", 
+            text: "Manakah di antara benda berikut yang termasuk dalam kategori limbah B3 di rumah tangga?", 
+            options: [
+                {id:'A', text:'Kertas koran'}, 
+                {id:'B', text:'Botol sisa pembasmi serangga'}, 
+                {id:'C', text:'Kulit pisang'}, 
+                {id:'D', text:'Kardus bekas'}
+            ], 
+            correct: 'B',
+            explanation: "Cairan pembasmi serangga mengandung bahan kimia pestisida aktif yang beracun, mudah meledak, atau korosif sehingga botol wadahnya termasuk jenis sampah B3."
+        },
+        { 
+            section: "Bagian 2: Penggolongan Sampah Khusus", 
+            text: "Sampah yang tidak dapat didaur ulang maupun dikomposkan dan harus dibuang ke TPA disebut...", 
+            options: [
+                {id:'A', text:'Sampah elektronik'}, 
+                {id:'B', text:'Sampah organik'}, 
+                {id:'C', text:'Sampah residu'}, 
+                {id:'D', text:'Sampah utama'}
+            ], 
+            correct: 'C',
+            explanation: "Sampah residu adalah sisa limbah akhir dari proses pemilahan yang tidak bisa lagi dimanfaatkan ulang atau didaur ulang, sehingga hanya bisa dikirim langsung ke TPA."
+        },
+        { 
+            section: "Bagian 2: Penggolongan Sampah Khusus", 
+            text: "Contoh dari sampah residu yang sulit diolah kembali adalah...", 
+            options: [
+                {id:'A', text:'Botol kaca'}, 
+                {id:'B', text:'Kardus'}, 
+                {id:'C', text:'Pembalut sekali pakai dan popok'}, 
+                {id:'D', text:'Kaleng susu'}
+            ], 
+            correct: 'C',
+            explanation: "Pembalut sekali pakai serta popok bayi terbuat dari paduan polimer khusus bercampur cairan organik sehingga tidak aman untuk didaur ulang secara umum dan digolongkan sebagai residu."
+        },
+        { 
+            section: "Bagian 2: Penggolongan Sampah Khusus", 
+            text: "Sampah yang berasal dari peralatan listrik yang sudah rusak atau mati disebut...", 
+            options: [
+                {id:'A', text:'Limbah domestik'}, 
+                {id:'B', text:'Sampah elektronik (E-waste)'}, 
+                {id:'C', text:'Sampah medis'}, 
+                {id:'D', text:'Sampah organik'}
+            ], 
+            correct: 'B',
+            explanation: "Peralatan elektronik seperti laptop, ponsel, TV, atau bohlam lampu yang sudah rusak masuk dalam klasifikasi sampah elektronik atau E-waste."
+        },
+        { 
+            section: "Bagian 2: Penggolongan Sampah Khusus", 
+            text: "Mengapa sampah elektronik tidak boleh dibuang sembarangan?", 
+            options: [
+                {id:'A', text:'Karena mengandung logam berat berbahaya seperti merkuri dan timbal'}, 
+                {id:'B', text:'Karena harganya mahal'}, 
+                {id:'C', text:'Karena mudah terbakar'}, 
+                {id:'D', text:'Karena bisa berubah menjadi emas'}
+            ], 
+            correct: 'A',
+            explanation: "Sirkuit elektronik dilapisi zat berbahaya seperti timbal, merkuri, dan kadmium yang dapat mencemari struktur tanah dan sumber air bersih jika hancur bebas di tempat sampah biasa."
+        },
+
+        // Bagian 3: Metode Pengolahan Sampah 3R (Q12 - Q15)
+        { 
+            section: "Bagian 3: Metode Pengolahan Sampah 3R", 
+            text: "Langkah pertama dalam memanfaatkan limbah untuk karya seni adalah...", 
+            options: [
+                {id:'A', text:'Langsung mengecat limbah'}, 
+                {id:'B', text:'Menjual limbah ke pengepul'}, 
+                {id:'C', text:'Menyeleksi dan membersihkan limbah'}, 
+                {id:'D', text:'Membakar limbah'}
+            ], 
+            correct: 'C',
+            explanation: "Untuk menjamin faktor kebersihan dan keamanan dalam pengerjaan seni rupa, limbah bekas wajib dipilih (seleksi) terlebih dahulu lalu dicuci bersih agar higienis."
+        },
+        { 
+            section: "Bagian 3: Metode Pengolahan Sampah 3R", 
+            text: "Proses mengolah kembali sampah menjadi produk baru yang bermanfaat disebut...", 
+            options: [
+                {id:'A', text:'Replant'}, 
+                {id:'B', text:'Recycle (Daur ulang)'}, 
+                {id:'C', text:'Replace'}, 
+                {id:'D', text:'Remove'}
+            ], 
+            correct: 'B',
+            explanation: "Recycle atau Daur Ulang adalah upaya memproses kembali bahan sampah (seperti kertas dihancurkan jadi bubur, atau plastik dilelehkan) menjadi produk bernilai pakai baru."
+        },
+        { 
+            section: "Bagian 3: Metode Pengolahan Sampah 3R", 
+            text: "Mengurangi penggunaan barang yang berpotensi menjadi sampah disebut...", 
+            options: [
+                {id:'A', text:'Reduce'}, 
+                {id:'B', text:'Reuse'}, 
+                {id:'C', text:'Recycle'}, 
+                {id:'D', text:'Review'}
+            ], 
+            correct: 'A',
+            explanation: "Reduce berarti mengurangi. Contohnya adalah membawa kantong belanja kain mandiri dari rumah agar mengurangi pemakaian kantong kresek plastik baru."
+        },
+        { 
+            section: "Bagian 3: Metode Pengolahan Sampah 3R", 
+            text: "Menggunakan kembali botol selai bekas untuk dijadikan vas bunga merupakan contoh tindakan... ", 
+            options: [
+                {id:'A', text:'Reduce'}, 
+                {id:'B', text:'Reuse'}, 
+                {id:'C', text:'Recycle'}, 
+                {id:'D', text:'Redesign'}
+            ], 
+            correct: 'B',
+            explanation: "Reuse bermakna memakai kembali suatu wadah atau barang bekas secara langsung tanpa melalui proses peleburan industri kimia terlebih dahulu."
+        },
+
+        // Bagian 4: Seni Rupa & Kerajinan Kreatif (Q16 - Q21)
+        { 
+            section: "Bagian 4: Seni Rupa & Kerajinan Kreatif", 
+            text: "Dalam membuat karya seni dari limbah plastik, alat yang paling sering digunakan untuk menyambung bahan adalah...", 
+            options: [
+                {id:'A', text:'Gergaji'}, 
+                {id:'B', text:'Palu'}, 
+                {id:'C', text:'Lem tembak atau double tape'}, 
+                {id:'D', text:'Obeng'}
+            ], 
+            correct: 'C',
+            explanation: "Lem tembak (hot glue) atau perekat double tape sangat berguna untuk menyambung material plastik berbobot ringan karena daya rekatnya yang instan dan cepat mengeras."
+        },
+        { 
+            section: "Bagian 4: Seni Rupa & Kerajinan Kreatif", 
+            text: "Bahan limbah yang cocok digunakan untuk membuat kerajinan anyaman adalah...", 
+            options: [
+                {id:'A', text:'Pecahan keramik'}, 
+                {id:'B', text:'Sedotan plastik atau bungkus kopi'}, 
+                {id:'C', text:'Baterai bekas'}, 
+                {id:'D', text:'Potongan kayu besar'}
+            ], 
+            correct: 'B',
+            explanation: "Sedotan atau bungkus plastik kopi memiliki karakteristik lentur, pipih, dan panjang yang sangat ideal untuk teknik dasar kerajinan anyaman tradisional."
+        },
+        { 
+            section: "Bagian 4: Seni Rupa & Kerajinan Kreatif", 
+            text: "Jenis limbah yang paling tepat digunakan untuk membuat pupuk kompos adalah...", 
+            options: [
+                {id:'A', text:'Sampah organik'}, 
+                {id:'B', text:'Sampah plastik'}, 
+                {id:'C', text:'Sampah kaca'}, 
+                {id:'D', text:'Sampah logam'}
+            ], 
+            correct: 'A',
+            explanation: "Kompos merupakan pupuk hasil dekomposisi hayati, yang hanya dapat dihasilkan dari pembusukan bahan-bahan hayati organik seperti sisa daun, jerami, atau kulit buah."
+        },
+        { 
+            section: "Bagian 4: Seni Rupa & Kerajinan Kreatif", 
+            text: "Unsur seni rupa yang paling menonjol saat kita menyusun potongan majalah bekas menjadi gambar baru (kolase) adalah...", 
+            options: [
+                {id:'A', text:'Bunyi'}, 
+                {id:'B', text:'Warna dan tekstur'}, 
+                {id:'C', text:'Rasa'}, 
+                {id:'D', text:'Aroma'}
+            ], 
+            correct: 'B',
+            explanation: "Kolase memanfaatkan potongan kertas berwarna dan permukaan kertas majalah bertekstur untuk membentuk gradasi gelap-terang serta visual gambar baru."
+        },
+        { 
+            section: "Bagian 4: Seni Rupa & Kerajinan Kreatif", 
+            text: "Membuat patung dari tumpukan kaleng bekas merupakan contoh karya seni...", 
+            options: [
+                {id:'A', text:'Satu dimensi'}, 
+                {id:'B', text:'Dua dimensi'}, 
+                {id:'C', text:'Tiga dimensi'}, 
+                {id:'D', text:'Audio visual'}
+            ], 
+            correct: 'C',
+            explanation: "Patung memiliki ukuran panjang, lebar, tinggi, serta volume fisik yang nyata di dalam ruang sehingga termasuk jenis karya seni rupa tiga dimensi (3D)."
+        },
+        { 
+            section: "Bagian 4: Seni Rupa & Kerajinan Kreatif", 
+            text: "Sebelum membuat karya seni dari limbah, kita sebaiknya membuat gambaran kasar yang disebut...", 
+            options: [
+                {id:'A', text:'Lukisan'}, 
+                {id:'B', text:'Sketsa'}, 
+                {id:'C', text:'Pameran'}, 
+                {id:'D', text:'Bingkai'}
+            ], 
+            correct: 'B',
+            explanation: "Sketsa adalah coretan rancangan gambar pola kasar sebagai panduan awal perancang sebelum mengeksekusi bahan-bahan limbah secara langsung."
+        },
+
+        // Bagian 5: Dampak & Sikap Peduli Lingkungan (Q22 - Q25)
+        { 
+            section: "Bagian 5: Dampak & Sikap Peduli Lingkungan", 
+            text: "Manfaat utama menciptakan karya seni dari limbah bagi lingkungan adalah...", 
+            options: [
+                {id:'A', text:'Menambah jumlah sampah'}, 
+                {id:'B', text:'Mengurangi polusi dan tumpukan sampah'}, 
+                {id:'C', text:'Membuat lingkungan menjadi kotor'}, 
+                {id:'D', text:'Menghabiskan biaya besar'}
+            ], 
+            correct: 'B',
+            explanation: "Mengolah limbah menjadi seni rupa kreatif akan mencegah sampah tersebut menumpuk liar di lingkungan bebas, sehingga membantu mereduksi pencemaran tanah dan air."
+        },
+        { 
+            section: "Bagian 5: Dampak & Sikap Peduli Lingkungan", 
+            text: "Jika kita ingin membuat bunga plastik dari limbah, bahan yang paling mudah ditemukan adalah...", 
+            options: [
+                {id:'A', text:'Kantong kresek bekas'}, 
+                {id:'B', text:'Kabel listrik'}, 
+                {id:'C', text:'Kaleng cat'}, 
+                {id:'D', text:'Sisa tulang ikan'}
+            ], 
+            correct: 'A',
+            explanation: "Kantong kresek bekas sangat melimpah di lingkungan kita, tipis, lentur, dan mudah digunting serta digulung membentuk mahkota dan kelopak kelopak bunga tiruan."
+        },
+        { 
+            section: "Bagian 5: Dampak & Sikap Peduli Lingkungan", 
+            text: "Keindahan sebuah karya seni dari limbah dilihat dari...", 
+            options: [
+                {id:'A', text:'Mahalnya bahan yang digunakan'}, 
+                {id:'B', text:'Kreativitas dan kerapihan dalam mengolah bahan'}, 
+                {id:'C', text:'Ukuran yang sangat besar'}, 
+                {id:'D', text:'Merk bahan yang dipakai'}
+            ], 
+            correct: 'B',
+            explanation: "Karya daur ulang tidak dinilai dari harga material asalnya, melainkan dari keunikan kreativitas sang kreator serta tingkat kedisiplinan (kerapihan) dalam menyusun bahan bekas."
+        },
+        { 
+            section: "Bagian 5: Dampak & Sikap Peduli Lingkungan", 
+            text: "Sikap yang benar terhadap sampah elektronik yang sudah rusak di rumah adalah...", 
+            options: [
+                {id:'A', text:'Membuangnya ke sungai'}, 
+                {id:'B', text:'Membakarnya di halaman'}, 
+                {id:'C', text:'Mengumpulkannya untuk dibawa ke tempat pengolahan khusus'}, 
+                {id:'D', text:'Menanamnya di dalam tanah'}
+            ], 
+            correct: 'C',
+            explanation: "Sampah elektronik harus diserahkan kepada pusat pengolahan daur ulang sampah elektronik terpercaya agar sirkuit berbahaya di dalamnya tidak larut mencemari tanah."
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let userAnswers = {};
+    let userData = { name: '', absen: '' };
+    let startTime;
+    let timerInterval;
+    let isExamActive = false;
+
+    // Secure exit alert framework
+    window.onbeforeunload = function() {
+        if (isExamActive) {
+            return "Apakah Anda yakin ingin keluar? Progress ujian Anda akan terhapus.";
+        }
+    };
+
+    function startExam() {
+        const nameInput = document.getElementById('name').value.trim();
+        const absenInput = document.getElementById('absen').value.trim();
+
+        if (!nameInput || nameInput.length < 3) {
+            alertCustom("Harap isi Nama Lengkap dengan benar (Minimal 3 Karakter)!");
+            return;
+        }
+
+        const absNum = parseInt(absenInput);
+        if (!absenInput || isNaN(absNum) || absNum < 1 || absNum > 50) {
+            alertCustom("Nomor Absen harus diisi dengan angka valid (1 sampai 50)!");
+            return;
+        }
+
+        userData.name = nameInput.toUpperCase();
+        userData.absen = absenInput;
+        isExamActive = true;
+
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('exam-screen').classList.remove('hidden');
+        document.getElementById('total-questions').innerText = questions.length;
+        
+        startTime = new Date();
+        timerInterval = setInterval(updateTimer, 1000);
+        buildQuestionMap();
+        renderQuestion();
+    }
+
+    function alertCustom(msg) {
+        const div = document.getElementById('custom-alert');
+        const text = document.getElementById('alert-text');
+        text.innerText = msg;
+        
+        div.classList.remove('hidden');
+        setTimeout(() => div.classList.remove('-translate-y-10'), 50);
+
+        setTimeout(() => {
+            div.classList.add('-translate-y-10');
+            setTimeout(() => div.classList.add('hidden'), 300);
+        }, 3500);
+    }
+
+    function updateTimer() {
+        const diff = Math.floor((new Date() - startTime) / 1000);
+        const m = Math.floor(diff / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = `${m}:${s}`;
+    }
+
+    function buildQuestionMap() {
+        const mapContainer = document.getElementById('question-map');
+        mapContainer.innerHTML = '';
+        questions.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.id = `map-btn-${i}`;
+            btn.onclick = () => jumpToQuestion(i);
+            btn.className = `flex-shrink-0 w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all ${
+                i === currentQuestionIndex 
+                    ? 'bg-blue-600 text-white ring-2 ring-blue-300' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`;
+            btn.innerText = i + 1;
+            mapContainer.appendChild(btn);
+        });
+    }
+
+    function updateQuestionMapUI() {
+        questions.forEach((_, i) => {
+            const btn = document.getElementById(`map-btn-${i}`);
+            if (!btn) return;
+
+            const isAnswered = userAnswers[i] !== undefined;
+            const isCurrent = i === currentQuestionIndex;
+
+            if (isCurrent) {
+                btn.className = "flex-shrink-0 w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all bg-blue-600 text-white ring-2 ring-blue-300";
+            } else if (isAnswered) {
+                btn.className = "flex-shrink-0 w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all bg-emerald-100 text-emerald-700 hover:bg-emerald-200";
+            } else {
+                btn.className = "flex-shrink-0 w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all bg-slate-100 text-slate-600 hover:bg-slate-200";
+            }
+        });
+        
+        // Auto horizontal scroll current question map button into view
+        const currentBtn = document.getElementById(`map-btn-${currentQuestionIndex}`);
+        if (currentBtn) {
+            currentBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+
+    function jumpToQuestion(index) {
+        currentQuestionIndex = index;
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const q = questions[currentQuestionIndex];
+        const container = document.getElementById('options-container');
+        
+        document.getElementById('current-number').innerText = currentQuestionIndex + 1;
+        document.getElementById('section-title').innerText = q.section;
+        document.getElementById('question-text').innerText = q.text;
+        document.getElementById('progress-bar').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+
+        container.innerHTML = '';
+        q.options.forEach(opt => {
+            const isSelected = userAnswers[currentQuestionIndex] === opt.id;
+            const div = document.createElement('div');
+            div.className = `option-item p-4 rounded-xl font-semibold flex items-center shadow-sm ${isSelected ? 'selected-option' : ''}`;
+            div.innerHTML = `
+                <div class="w-8 h-8 rounded-full flex items-center justify-center mr-4 flex-shrink-0 font-bold transition-all ${isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-blue-600'}">
+                    ${opt.id}
+                </div>
+                <span class="text-sm text-gray-700 leading-relaxed">${opt.text}</span>
+            `;
+            div.onclick = () => selectOption(opt.id);
+            container.appendChild(div);
+        });
+
+        const prevBtn = document.getElementById('prev-btn');
+        prevBtn.disabled = currentQuestionIndex === 0;
+        prevBtn.style.opacity = currentQuestionIndex === 0 ? '0.4' : '1';
+        
+        document.getElementById('next-btn').innerText = currentQuestionIndex === questions.length - 1 ? "Selesai" : "Selanjutnya";
+
+        updateQuestionMapUI();
+
+        // Smooth scroll container to top
+        document.querySelector('.main-content').scrollTop = 0;
+    }
+
+    function selectOption(optionId) {
+        userAnswers[currentQuestionIndex] = optionId;
+        renderQuestion();
+    }
+
+    function prevQuestion() {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            renderQuestion();
+        }
+    }
+
+    function handleNext() {
+        if (currentQuestionIndex < questions.length - 1) {
+            currentQuestionIndex++;
+            renderQuestion();
+        } else {
+            showConfirm();
+        }
+    }
+
+    function showConfirm() {
+        const total = questions.length;
+        const answered = Object.keys(userAnswers).length;
+        const unanswered = total - answered;
+
+        const msgEl = document.getElementById('confirm-modal-msg');
+        if (unanswered > 0) {
+            msgEl.innerHTML = `Kamu baru menjawab <span class="font-bold text-red-600">${answered}</span> dari <span class="font-bold">${total}</span> soal.<br><span class="text-red-500 font-bold block mt-2">Masih ada ${unanswered} soal yang belum dikerjakan!</span> Apakah kamu yakin ingin mengirimkan lembar ujian?`;
+        } else {
+            msgEl.innerHTML = `Luar biasa! Semua <span class="font-bold text-green-600">${total}</span> soal telah terjawab. Apakah kamu yakin ingin mengakhiri dan mengirimkan ujian sekarang?`;
+        }
+        document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    function hideConfirm() {
+        document.getElementById('confirm-modal').style.display = 'none';
+    }
+
+    function showLoading(text, subtext) {
+        document.getElementById('loading-text').innerText = text;
+        document.getElementById('loading-subtext').innerText = subtext;
+        document.getElementById('loading-overlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loading-overlay').style.display = 'none';
+    }
+
+    async function finishExam() {
+        hideConfirm();
+        showLoading("Mengirim Jawaban...", "Menyimpan data ujian secara aman ke database sekolah.");
+
+        isExamActive = false;
+        clearInterval(timerInterval);
+
+        // Calculate score
+        let correctCount = 0;
+        questions.forEach((q, index) => {
+            if (userAnswers[index] === q.correct) {
+                correctCount++;
+            }
+        });
+        const finalScore = (correctCount / questions.length) * 100;
+
+        // Formulate durations
+        const diff = Math.floor((new Date() - startTime) / 1000);
+        const m = Math.floor(diff / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        const durationStr = `${m}:${s}`;
+
+        // Attempt data submission to Spreadsheet URL
+        const rawAnswers = JSON.stringify(userAnswers);
+        const payload = {
+            nama: userData.name,
+            absen: userData.absen,
+            skor: finalScore.toFixed(1),
+            durasi: durationStr,
+            jawaban: rawAnswers
+        };
+
+        try {
+            // Send requests via fetch with direct handling timeout 
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 7000);
+
+            await fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+            clearTimeout(id);
+        } catch (e) {
+            console.warn("Spreadsheet Gagal / Offline mode diaktifkan.");
+        }
+
+        // Prepare Review Page Screen UI
+        document.getElementById('final-score').innerText = finalScore.toFixed(0);
+        document.getElementById('final-correct').innerText = `${correctCount}/${questions.length}`;
+        document.getElementById('final-duration').innerText = durationStr;
+
+        populateReviewList();
+
+        hideLoading();
+        document.getElementById('exam-screen').classList.add('hidden');
+        document.getElementById('review-screen').classList.remove('hidden');
+    }
+
+    function populateReviewList() {
+        const list = document.getElementById('review-list');
+        list.innerHTML = '';
+
+        questions.forEach((q, idx) => {
+            const chosen = userAnswers[idx];
+            const isCorrect = chosen === q.correct;
+            
+            const card = document.createElement('div');
+            card.className = `p-4 rounded-xl border ${
+                isCorrect 
+                    ? 'bg-emerald-50/70 border-emerald-100' 
+                    : 'bg-red-50/70 border-red-100'
+            } flex flex-col gap-2.5`;
+
+            let answersBlock = '';
+            q.options.forEach(opt => {
+                let badgeStyle = "bg-gray-100 text-gray-700";
+                if (opt.id === q.correct) {
+                    badgeStyle = "bg-emerald-600 text-white font-bold";
+                } else if (opt.id === chosen) {
+                    badgeStyle = "bg-red-600 text-white font-bold";
+                }
+
+                answersBlock += `
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${badgeStyle}">${opt.id}</span>
+                        <span class="text-gray-600">${opt.text}</span>
+                    </div>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start gap-4">
+                    <span class="px-2.5 py-0.5 bg-white rounded-full text-[9px] font-bold text-slate-500 uppercase tracking-wider border">
+                        Soal ${idx + 1}
+                    </span>
+                    <span class="text-[10px] font-bold uppercase ${isCorrect ? 'text-emerald-600' : 'text-red-500'}">
+                        ${isCorrect ? 'Benar ✔' : 'Salah ✘'}
+                    </span>
+                </div>
+                <p class="text-xs font-bold text-gray-800 leading-relaxed whitespace-pre-line">${q.text}</p>
+                <div class="space-y-1.5 py-2 border-y border-dashed border-gray-200">
+                    ${answersBlock}
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-slate-100">
+                    <p class="text-[9px] font-extrabold text-blue-600 uppercase tracking-widest mb-1">Pembahasan:</p>
+                    <p class="text-[11px] text-gray-600 leading-relaxed whitespace-pre-line font-medium">${q.explanation}</p>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+    }
+</script>
+
+</body>
+</html>
